@@ -7,7 +7,7 @@ usageversion () {
 progname="`basename \"$0\"`"
   cat >&2 <<END
 
-Usage: $progname
+Usage: $progname filename option
 
 Options:
      -c,  --csv           print csv  format
@@ -18,14 +18,15 @@ Options:
      -v,  --version       print this message
 
 Description:
-     
+     Please see below for more information
+     https://github.com/akishitara/parse_ini/
 
 Exsample:
-  # $progname /etc/mysql/my.cnf -t
-    client	port	3306
-    client	socket	/var/run/mysqld/mysqld.sock
-    mysqld_safe	socket	/var/run/mysqld/mysqld.sock
-    mysqld_safe	nice	0
+     # $progname /etc/mysql/my.cnf -t
+       client	port	3306
+       client	socket	/var/run/mysqld/mysqld.sock
+       mysqld_safe	socket	/var/run/mysqld/mysqld.sock
+       mysqld_safe	nice	0
 
 END
 }
@@ -45,16 +46,11 @@ function main(){
     elif [[ $var ]] ;then
       if [ $format == 'csv' ] ;then
         print_csv $section $var $val
-      elif [ $format == 'json' ] ;then
-        param["$var"]="$val"
       else
         print_tsv $section $var $val
       fi
     fi
   done
-  if [ $format == 'json' ] ;then
-    printf {"responseBean": { "$section": { "$var": "param["$var"]", "$var": "param["$var"]"}}}
-  fi
 }  
 
 # main
@@ -64,7 +60,7 @@ while true ; do
         -v|--version) usageversion;   exit 0 ;;
         -c|--csv)  format=csv ; main ;  exit 0 ;;
         -t|--tsv)  format=tsv ; main ;  exit 0 ;;
-        -j|--json) format=json; main ;  exit 0 ;;
+      -j|--json) format=csv ; main | awk 'BEGIN {FS=","; json = "[";} {json = json "{\"section\":\"" $1 "\",\"column1\":\"" $2 "\",\"column2\":\"" $3 "\"},\n";} END {sub(/,\n$/, "", json); json = json "]\n"; print json}' ; exit 0 ;; 
         *)         format=tsv ; main ;  exit 0 ;;
     esac
 done
